@@ -9,11 +9,11 @@
 | 구분 | 노드 | 역할 |
 |------|------|------|
 | **OCI** | `arm` | 컴퓨팅 (Authentik, Code-Server, Jellyfin, NPM…) |
-| **OCI** | `vps` | 게이트웨이 (주석 처리) |
+| **OCI** | `vps` | 게이트웨이 (Legacy) |
 | **Home** | `n4000` | **Hub** — NFS 서버, WireGuard 허브, 데이터(Nextcloud, Immich, Syncthing…) |
 | **Home** | `n4200` | 엣지 (Ghost, Homepage, Home Assistant) |
 
-→ **site.yml** 한 번이면 VPN·NFS·서비스 배포까지 갈긴다.
+→ **site.yml**를 통해 VPN·NFS·서비스 배포까지 가능합니다.
 
 ---
 
@@ -45,7 +45,7 @@ ansible-playbook site.yml --tags deploy
 ansible-playbook site.yml --limit n4000,n4200
 ```
 
-**최초 1회:** `group_vars/secrets.yml` 이 Vault 암호화되어 있으므로, `ansible.cfg`에 설정한 `vault_password_file`(예: `.vault_pass`)이 있어야 한다.
+**최초 1회:** `group_vars/secrets.yml` 이 Vault 암호화되어 있으므로, `ansible.cfg`에 설정한 `vault_password_file`(예: `.vault_pass`)이 있어야 합니다.
 
 ---
 
@@ -86,9 +86,9 @@ ansible-playbook site.yml --limit n4000,n4200
 
 ## 🔐 보안 (Vault)
 
-- **`group_vars/secrets.yml`** → **전체 파일**이 `Ansible Vault`(AES256)로 암호화되어 있음.
+- **`group_vars/secrets.yml`** → **전체 파일**이 `Ansible Vault`(AES256)로 암호화되어 있습니다.
 - 안에 들어가는 것: SSH 키 경로, `hub_info`, `all_peers`, **host_specific**(endpoint, public_key, private_key, address, public_interface).
-- 복호화는 `ansible.cfg`의 `vault_password_file`(예: `.vault_pass`)로 자동 적용.
+- 복호화는 `ansible.cfg`의 `vault_password_file`(예: `.vault_pass`)로 자동적용됩니다.
 - **`.vault_pass`는 반드시 `.gitignore`에 두고 저장소에 올리지 말 것.**
 
 ---
