@@ -1,0 +1,13 @@
+---
+- name: Run Base System Setup
+  import_tasks: base.yml
+
+- name: Run Docker Setup
+  import_tasks: docker.yml
+
+- name: Run Security Jobs
+  import_tasks: security.yml
+
+- name: Run WireGuard Setup
+  import_tasks: wireguard.yml
+

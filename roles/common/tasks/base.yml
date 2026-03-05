@@ -1,0 +1,57 @@
+---
+- name: Set Timezone to Asia/Seoul
+  timezone:
+    name: Asia/Seoul
+
+- name: Enable IPv4 Forwarding (For WG/Docker Routing)
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    state: present
+    reload: yes
+
+- name: Install rsync (Required for file synchronization)
+  apt:
+    name: rsync
+    state: present
+    update_cache: yes
+
+# --- [분기점] AGH를 돌리는 서버(N4000)만 특별 관리 ---
+- name: Disable systemd-resolved only on AGH host (N4000)
+  service:
+    name: systemd-resolved
+    state: stopped
+    enabled: no
+  when: inventory_hostname == 'n4000'
+
+- name: Setup static resolv.conf for AGH host
+  copy:
+    dest: /etc/resolv.conf
+    content: |
+      nameserver 127.0.0.1
+      nameserver 8.8.8.8
+    force: yes
+  when: inventory_hostname == 'n4000'
+
+# --- [분기점] AGH를 안 돌리는 나머지 서버들 설정 ---
+- name: Fix systemd-resolved DNS for other hosts
+  lineinfile:
+    path: /etc/systemd/resolved.conf
+    regexp: '^#?DNS='
+    line: 'DNS=8.8.8.8 1.1.1.1'
+  when: inventory_hostname != 'n4000'
+
+- name: Ensure Stub Resolver Link for other hosts
+  file:
+    src: /run/systemd/resolve/stub-resolv.conf
+    dest: /etc/resolv.conf
+    state: link
+    force: yes
+  when: inventory_hostname != 'n4000'
+
+- name: Restart systemd-resolved for other hosts
+  service:
+    name: systemd-resolved
+    state: restarted
+    enabled: yes
+  when: inventory_hostname != 'n4000'

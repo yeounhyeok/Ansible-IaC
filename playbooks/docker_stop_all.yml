@@ -1,0 +1,9 @@
+---
+- name: "Stop Docker service"
+  hosts: all #tmp_nodes
+  become: yes
+  tasks:
+    - name: Ensure Docker service is stopped
+      ansible.builtin.service:
+        name: docker
+        state: stopped

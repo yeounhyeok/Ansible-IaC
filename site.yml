@@ -1,0 +1,88 @@
+---
+# host_specific 변수 로드 (group_vars/host_specific.yml → 각 호스트 fact). 태그 없음 → 항상 먼저 실행
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Apply host-specific variables
+      set_fact:
+        "{{ item.key }}": "{{ item.value }}"
+      loop: "{{ host_specific[inventory_hostname] | dict2items }}"
+      when: host_specific is defined and inventory_hostname in host_specific
+
+# !!! wireguard 주의 - 중간에 끊겨버림 -> 실제 주소 기준으로 가는게 나을듯
+- hosts: all
+  become: yes
+  roles:
+    - wireguard
+  tags: wireguard
+
+# nfs setup
+- hosts: all
+  become: yes
+  name: "NFS setting -> shares docker_volumes from n4000"
+  vars:
+    vpn_network: "10.0.1.0/24"
+    nfs_server_ip: "10.0.1.10"
+  roles:
+    - nfs_setup
+  tags: nfs
+
+# 1. 🐢 N4000: Data Warehouse hub (HDD/유선)
+- hosts: n4000
+  become: yes
+  vars:
+    client_mount_path: "/mnt/usb/docker_volumes"
+    target_services:
+      - nextcloud
+      - immich-app
+      - syncthing
+      - vaultwarden
+      - adguardhome
+#      - frpc_n4000
+  roles:
+#    - common
+    - deploy_services
+  tags: deploy
+
+# 2. ⚡ OCI ARM: Compute Power (RAM 24GB)
+- hosts: arm
+  become: yes
+  vars:
+    target_services:
+      - authentik
+      - code-server
+      - onlyoffice
+      - uptimekuma
+      #- grafana
+      #- frpc_arm
+      - nginx-proxy-manager
+      - jellyfin
+  roles:
+#    - common
+    - deploy_services
+  tags: deploy
+
+# 3. 🚀 N4200: Edge Worker (SSD/Web)
+- hosts: n4200
+  become: yes
+  vars:
+    target_services:
+      - ghost
+      - homepage
+      - home-assistant
+  roles:
+#    - common
+    - deploy_services
+  tags: deploy
+
+# 4. 🛡️ OCI AMD (vps): Gateway
+#- hosts: vps
+#  become: yes
+#  vars:
+#    target_services:
+#      - nginx-proxy-manager
+#      - frps_vps
+#  roles:
+#    - common
+#    - deploy_services
+#  tags: deploy

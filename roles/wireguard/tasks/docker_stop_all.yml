@@ -1,0 +1,5 @@
+---
+- name: Ensure Docker service is stopped
+  ansible.builtin.service:
+    name: docker
+    state: stopped

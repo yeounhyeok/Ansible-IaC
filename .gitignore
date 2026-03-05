@@ -1,0 +1,5 @@
+.ansible/
+.stfolder/
+.legacy/
+.vault_pass
+.DS_Store

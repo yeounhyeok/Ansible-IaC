@@ -1,0 +1,9 @@
+---
+- name: restart ssh
+  service:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - ssh
+    - sshd
+  ignore_errors: yes  # 둘 중 하나가 없어도 에러 안 나게

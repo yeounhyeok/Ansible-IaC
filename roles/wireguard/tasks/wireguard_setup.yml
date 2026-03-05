@@ -1,0 +1,86 @@
+---
+- name: Install WireGuard and dependencies
+  apt:
+    name:
+      - wireguard
+      - wireguard-tools
+      - iptables
+      - resolvconf
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Ensure /etc/wireguard exists
+  file:
+    path: /etc/wireguard
+    state: directory
+    mode: "0755"
+  become: yes
+
+- name: Generate WireGuard keypair if missing
+  command: bash -lc "umask 077 && wg genkey | tee /etc/wireguard/private.key | wg pubkey > /etc/wireguard/public.key"
+  args:
+    creates: /etc/wireguard/private.key
+  become: yes
+
+- name: Read private key
+  slurp:
+    src: /etc/wireguard/private.key
+  register: wg_priv
+  become: yes
+
+- name: Read public key
+  slurp:
+    src: /etc/wireguard/public.key
+  register: wg_pub
+  become: yes
+
+- name: Set local WireGuard facts
+  set_fact:
+    private_key: "{{ wg_priv.content | b64decode | trim }}"
+    public_key: "{{ wg_pub.content | b64decode | trim }}"
+    cacheable: true
+
+
+- name: Generate WireGuard configuration from template
+  template:
+    src: ../templates/wg0.conf.j2
+    dest: /etc/wireguard/wg0.conf
+    owner: root
+    group: root
+    mode: "0600"
+  register: wg_conf
+  become: yes
+
+
+- name: "Sync WireGuard configuration without downtime"
+  shell: "wg syncconf wg0 <(wg-quick strip wg0)"
+  args:
+    executable: /bin/bash
+  when: wg_conf.changed
+  become: yes
+
+
+# resolved로 인한 dns 꼬임 방지
+
+- name: Stop and Disable systemd-resolved
+  service:
+    name: systemd-resolved
+    state: stopped
+    enabled: no
+
+- name: Remove broken resolv.conf link
+  file:
+    path: /etc/resolv.conf
+    state: absent
+
+- name: Write static DNS configuration (The Iron Law)
+  copy:
+    dest: /etc/resolv.conf
+    content: |
+      nameserver 10.0.1.10
+      nameserver 8.8.8.8
+      options edns0 trust-ad
+    owner: root
+    group: root
+    mode: '0644'
