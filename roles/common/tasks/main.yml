@@ -7,7 +7,3 @@
 
 - name: Run Security Jobs
   import_tasks: security.yml
-
-- name: Run WireGuard Setup
-  import_tasks: wireguard.yml
-

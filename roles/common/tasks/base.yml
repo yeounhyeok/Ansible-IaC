@@ -10,11 +10,49 @@
     state: present
     reload: yes
 
+- name: Configure APT network retries
+  copy:
+    dest: /etc/apt/apt.conf.d/99network-retry
+    mode: '0644'
+    content: |
+      Acquire::Retries "5";
+      Acquire::http::Timeout "20";
+      Acquire::https::Timeout "20";
+      Acquire::ForceIPv4 "true";
+
+- name: Find Docker apt source files before apt operations
+  find:
+    paths: /etc/apt/sources.list.d
+    patterns: "*docker*.list"
+    file_type: file
+  register: early_docker_source_files
+
+- name: Remove conflicting Docker apt source files before apt operations
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ early_docker_source_files.files }}"
+  when: item.path != '/etc/apt/sources.list.d/docker.list'
+
+- name: Remove Docker repo lines from sources.list before apt operations
+  lineinfile:
+    path: /etc/apt/sources.list
+    regexp: '.*download\.docker\.com.*'
+    state: absent
+
+- name: Refresh APT cache with retry
+  command: apt-get update
+  register: apt_update_result
+  changed_when: false
+  retries: 4
+  delay: 5
+  until: apt_update_result.rc == 0
+
 - name: Install rsync (Required for file synchronization)
   apt:
     name: rsync
     state: present
-    update_cache: yes
+    update_cache: no
 
 # --- [분기점] AGH를 돌리는 서버(N4000)만 특별 관리 ---
 - name: Disable systemd-resolved only on AGH host (N4000)
@@ -38,7 +76,7 @@
   lineinfile:
     path: /etc/systemd/resolved.conf
     regexp: '^#?DNS='
-    line: 'DNS=8.8.8.8 1.1.1.1'
+    line: 'DNS=8.8.8.8 1.1.1.1 10.0.1.10'
   when: inventory_hostname != 'n4000'
 
 - name: Ensure Stub Resolver Link for other hosts
