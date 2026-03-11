@@ -25,8 +25,8 @@ PostDown = resolvectl revert %i
 
 [Peer]
 PublicKey = {{ hub_info.public_key }}
-{# OCI-ARM 노드일 경우에만 백준 IP 대역 추가 #}
-{% if inventory_hostname == 'oci-arm-node' %}
+{# ARM 노드일 경우에만 백준 IP 대역 추가 #}
+{% if inventory_hostname == 'arm' %}
 AllowedIPs = 10.0.1.0/24, 13.192.194.33/32, 35.72.131.211/32
 {% else %}
 AllowedIPs = 10.0.1.0/24
