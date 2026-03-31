@@ -10,7 +10,13 @@ tailscale_auth_key: "{{ vault_tailscale_auth_key | default('') }}"
 tailscale_tags: []
 
 tailscale_hostname: "{{ inventory_hostname }}"
-tailscale_accept_dns: false
+# Per-host override map example:
+# tailscale_accept_dns_by_host:
+#   arm: true
+#   n4000: true
+#   n4200: true
+tailscale_accept_dns_by_host: {}
+tailscale_accept_dns: "{{ tailscale_accept_dns_by_host[inventory_hostname] | default(false) }}"
 tailscale_login_server: ""
 tailscale_extra_args: []
 tailscale_force_reauth: false

@@ -5,3 +5,9 @@ client_mount_path: "/mnt/nfs"
 local_service_path: "/home/{{ ansible_user }}/docker_volumes"
 vpn_network: "10.0.1.0/24"
 nfs_server_ip: "10.0.1.10"
+
+# Enable Tailscale DNS acceptance per node so MagicDNS names resolve via system resolver.
+tailscale_accept_dns_by_host:
+  arm: true
+  n4000: true
+  n4200: true
