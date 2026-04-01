@@ -1,11 +1,10 @@
 ---
-# 공통 경로 및 네트워크 설정
-# WireGuard 기반 NFS 경로/네트워크
-wg_nfs_export_path: "/mnt/usb"
-wg_nfs_client_mount_path: "/mnt/nfs"
+# 공통 경로 및 네트워크 설정 (Tailscale 기반 NFS)
+ts_nfs_export_path: "/mnt/usb"
+ts_nfs_client_mount_path: "/mnt/nfs"
 local_service_path: "/home/{{ ansible_user }}/docker_volumes"
-wg_vpn_network_cidr: "10.0.1.0/24"
-wg_nfs_server_ip: "10.0.1.10"
+ts_nfs_server_host: "n4000"
+ts_nfs_allowed_cidr: "100.64.0.0/10"
 
 # Tailscale per-host flags (ts_ prefix).
 ts_accept_dns_by_host:

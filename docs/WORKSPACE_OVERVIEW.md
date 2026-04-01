@@ -32,7 +32,7 @@ ansibleWorkspace/
     │   │   ├── main.yml
     │   │   └── nfs_setup.yml     # apt, mount, template(exports.j2), service, fstab
     │   └── templates/
-    │       └── exports.j2        # wg_nfs_export_path + wg_vpn_network_cidr(rw,sync,...)
+    │       └── exports.j2        # ts_nfs_export_path + ts_nfs_allowed_cidr(rw,sync,...)
     │
     ├── common/                   # 공통 시스템·Docker·보안 (site.yml에서 주석 처리됨)
     │   ├── tasks/
@@ -89,7 +89,7 @@ ansibleWorkspace/
 - **resolvectl** — Worker 노드 DNS (wg 인터페이스용)
 
 ### 스토리지·파일
-- **NFS** — n4000이 서버, 나머지는 클라이언트 (wg_nfs_export_path 공유)
+- **NFS** — n4000이 서버, 나머지는 클라이언트 (ts_nfs_export_path 공유)
 - **rsync** — N4000 → 각 노드 서비스 디렉터리 동기화 (sync_volumes_from_hub)
 - **Jinja2** — wg0.conf.j2, exports.j2 템플릿
 
