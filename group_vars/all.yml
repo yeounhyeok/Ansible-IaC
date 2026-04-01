@@ -7,12 +7,12 @@ local_service_path: "/home/{{ ansible_user }}/docker_volumes"
 wg_vpn_network_cidr: "10.0.1.0/24"
 wg_nfs_server_ip: "10.0.1.10"
 
-# Enable Tailscale DNS acceptance per node so MagicDNS names resolve via system resolver.
-tailscale_accept_dns_by_host:
+# Tailscale per-host flags (ts_ prefix).
+ts_accept_dns_by_host:
   arm: true
   n4000: true
   n4200: true
 
 # Advertise exit node on selected hosts only.
-tailscale_advertise_exit_node_by_host:
+ts_advertise_exit_node_by_host:
   n4000: true

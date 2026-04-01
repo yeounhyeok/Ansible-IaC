@@ -2,11 +2,11 @@
 - name: Validate Tailscale config for backup management path
   assert:
     that:
-      - tailscale_tags is iterable
-      - tailscale_tags is not string
-      - tailscale_auth_key | length > 0
-    fail_msg: "Set vault_tailscale_auth_key and optional tailscale_tags before applying tailscale role."
-  when: tailscale_enabled | bool
+      - ts_tags is iterable
+      - ts_tags is not string
+      - ts_auth_key | length > 0
+    fail_msg: "Set vault_ts_auth_key (or vault_tailscale_auth_key) and optional ts_tags before applying tailscale role."
+  when: ts_enabled | bool
 
 - name: Validate OS support for tailscale apt repository
   assert:
@@ -14,7 +14,7 @@
       - ansible_facts["os_family"] == "Debian"
       - ansible_facts["distribution"] in ["Debian", "Ubuntu", "Raspbian"]
     fail_msg: "This tailscale role currently supports Debian/Ubuntu/Raspbian hosts only."
-  when: tailscale_enabled | bool
+  when: ts_enabled | bool
 
 - name: Install Tailscale package and repository dependencies
   block:
@@ -45,11 +45,11 @@
           - gnupg
         state: present
         update_cache: yes
-        lock_timeout: "{{ tailscale_apt_lock_timeout_seconds }}"
-      register: tailscale_apt_prereq
-      until: tailscale_apt_prereq is succeeded
-      retries: "{{ tailscale_apt_retries }}"
-      delay: "{{ tailscale_apt_retry_delay_seconds }}"
+        lock_timeout: "{{ ts_apt_lock_timeout_seconds }}"
+      register: ts_apt_prereq
+      until: ts_apt_prereq is succeeded
+      retries: "{{ ts_apt_retries }}"
+      delay: "{{ ts_apt_retry_delay_seconds }}"
 
     - name: Ensure apt keyrings directory exists
       file:
@@ -74,11 +74,11 @@
         name: tailscale
         state: present
         update_cache: yes
-        lock_timeout: "{{ tailscale_apt_lock_timeout_seconds }}"
-      register: tailscale_pkg_install
-      until: tailscale_pkg_install is succeeded
-      retries: "{{ tailscale_apt_retries }}"
-      delay: "{{ tailscale_apt_retry_delay_seconds }}"
+        lock_timeout: "{{ ts_apt_lock_timeout_seconds }}"
+      register: ts_pkg_install
+      until: ts_pkg_install is succeeded
+      retries: "{{ ts_apt_retries }}"
+      delay: "{{ ts_apt_retry_delay_seconds }}"
   always:
     - name: Restore background apt timers after package install
       systemd:
@@ -89,7 +89,7 @@
         - apt-daily-upgrade.timer
       failed_when: false
   become: yes
-  when: tailscale_enabled | bool
+  when: ts_enabled | bool
 
 - name: Configure and validate Tailscale backup path
   block:
@@ -101,7 +101,7 @@
 
     - name: Check current Tailscale status
       command: tailscale status --json
-      register: tailscale_status
+      register: ts_status
       changed_when: false
       failed_when: false
 
@@ -117,22 +117,22 @@
           value: "1"
         - name: net.ipv6.conf.all.forwarding
           value: "1"
-      when: tailscale_advertise_exit_node | bool
+      when: ts_advertise_exit_node | bool
 
     - name: Bring node into tailnet (backup path only)
       command: >-
         tailscale up
-        --authkey={{ tailscale_auth_key }}
-        --hostname={{ tailscale_hostname }}
-        --accept-dns={{ tailscale_accept_dns | ternary('true', 'false') }}
-        {% if tailscale_advertise_exit_node | bool %}--advertise-exit-node{% endif %}
-        {% if tailscale_tags | length > 0 %}--advertise-tags={{ tailscale_tags | join(',') }}{% endif %}
-        {% if tailscale_login_server | length > 0 %}--login-server={{ tailscale_login_server }}{% endif %}
-        {{ tailscale_extra_args | join(' ') }}
+        --authkey={{ ts_auth_key }}
+        --hostname={{ ts_hostname }}
+        --accept-dns={{ ts_accept_dns | ternary('true', 'false') }}
+        {% if ts_advertise_exit_node | bool %}--advertise-exit-node{% endif %}
+        {% if ts_tags | length > 0 %}--advertise-tags={{ ts_tags | join(',') }}{% endif %}
+        {% if ts_login_server | length > 0 %}--login-server={{ ts_login_server }}{% endif %}
+        {{ ts_extra_args | join(' ') }}
       no_log: true
-      register: tailscale_up
-      changed_when: tailscale_up.rc == 0
-      when: tailscale_force_reauth | bool or tailscale_reapply_on_each_run | bool or tailscale_status.rc != 0
+      register: ts_up
+      changed_when: ts_up.rc == 0
+      when: ts_force_reauth | bool or ts_reapply_on_each_run | bool or ts_status.rc != 0
 
     - name: Minimal validation - tailscale binary is responsive
       command: tailscale version
@@ -140,8 +140,8 @@
 
     - name: Minimal validation - node has tailnet IPv4
       command: tailscale ip -4
-      register: tailscale_ipv4
+      register: ts_ipv4
       changed_when: false
-      failed_when: tailscale_ipv4.rc != 0
+      failed_when: ts_ipv4.rc != 0
   become: yes
-  when: tailscale_enabled | bool
+  when: ts_enabled | bool
