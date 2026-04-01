@@ -24,11 +24,13 @@
 
 # !!! wireguard 주의 - At first, --limit n4000 option needed because it is the vpn hub
 # please play in only n4000 first then play the others
-- hosts: all
-  become: yes
-  roles:
-    - wireguard
-  tags: wireguard
+# LEGACY BECAUSE OF ITS INSTABILITY WHILE SETTING
+
+# - hosts: all
+#   become: yes
+#   roles:
+#     - wireguard
+#   tags: wireguard
 
 # nfs setup
 - hosts: all
@@ -39,7 +41,7 @@
   tags: nfs
 
 
-# set tailscale backdoor for emergency
+# set tailscale 
 - hosts: all
   become: yes
   roles:
